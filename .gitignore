@@ -40,3 +40,6 @@ venv/
 .vscode/
 .idea/
 *.swp
+
+# Mezon cache
+/mezon-cache
