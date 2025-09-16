@@ -1,0 +1,64 @@
+import { AppDataSource } from "../data-source.ts";
+import { CompanyThread } from "../entities/CompanyThread.ts";
+import { Post } from "../entities/Post.ts";
+import { Reply } from "../entities/Reply.ts";
+import { DataNotFoundException } from "../exceptions/DataNotFoundException.ts";
+import { mapCompanyDTOToEntity } from "../mapper/CompanyThreadMapper.ts";
+import { CompanyThreadDTO } from "../dtos/CompanyThreadDTO.ts";
+
+export class CompanyThreadService {
+    private repo = AppDataSource.getRepository(CompanyThread);
+
+    async save(dto: CompanyThreadDTO) {
+        const newCompany = mapCompanyDTOToEntity(dto);
+
+        const existingCompany = await this.repo.findOne({
+            where: { name: dto.name },
+            relations: ["posts", "posts.replies"]
+        });
+
+        if (existingCompany) {
+            const existingPostIds = new Set(existingCompany.getPosts().map(p => p.getOriginId()));
+            const newPosts = newCompany.getPosts().filter(p => !existingPostIds.has(p.getOriginId()));
+
+            for (const post of newPosts) {
+                const existingReplyIds = new Set(
+                    existingCompany.getPosts()
+                        .flatMap(p => p.getReplies())
+                        .map(r => r.getReplyOriginId())
+                );
+
+                const filteredReplies = (post.getReplies() || []).filter(r => !existingReplyIds.has(r.getReplyOriginId()));
+                post.setReplies(filteredReplies);
+
+                existingCompany.getPosts().push(post);
+            }
+
+            await this.repo.save(existingCompany);
+            console.log(`Company "${dto.name}" updated (merged new posts/replies).`);
+        } else {
+            await this.repo.save(newCompany);
+            console.log(`Company "${dto.name}" saved as new!`);
+        }
+    }
+
+
+    async findAllCompanies() {
+        return await this.repo.find({
+            select: ["id", "name"]
+       });
+    } 
+
+    async findDetailCompany(id: number) {
+        const company = await this.repo.findOne({
+            where: { id } as any, 
+            relations: ['posts', 'posts.replies']
+        });
+
+        if (!company) {
+            throw new DataNotFoundException('Company not found',);
+        }
+
+        return company;
+    }
+}
