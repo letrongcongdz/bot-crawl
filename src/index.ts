@@ -4,6 +4,7 @@ import { AppDataSource } from './data-source.js';
 import router from './routes/index.ts';
 import { ErrorHandler } from './middlewares/ErrorHandler.ts';
 import { runCrawlerAndSave } from './services/CrawlerService.ts';
+import { startCronJob } from './CronJob.ts';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,7 +19,8 @@ AppDataSource.initialize()
   .then(async () => {
     console.log('Data Source has been initialized.');
 
-    await runCrawlerAndSave();
+    startCronJob();
+    // await runCrawlerAndSave();
 
     app.listen(PORT, () => {
       console.log(`Server is running on http://localhost:${PORT}`);

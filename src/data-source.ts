@@ -10,12 +10,9 @@ export const AppDataSource = new DataSource({
   host: process.env.DB_HOST || 'localhost',
   port: Number(process.env.DB_PORT) || 5432,
   username: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || '',
+  password: process.env.DB_PASSWORD || '11062003cong',
   database: process.env.DB_NAME || 'bot-crawl',
   synchronize: true,
   logging: false,
   entities: [CompanyThread, Post, Reply],
 });
-
-console.log('DB_HOST =', process.env.DB_HOST);
-
