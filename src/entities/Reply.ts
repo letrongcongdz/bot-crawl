@@ -10,13 +10,13 @@ import { Post } from "./Post.js";
 @Entity({ name: "replies" })
 export class Reply {
     @PrimaryGeneratedColumn({ name: "id" })
-    private id!: number;
+    public id!: number;
     @Column({ name: "reviewer", type: "varchar" })
-    private reviewer: string;
+    public reviewer: string;
     @Column({ name: "content", type: "text" })
     public content: string;
     @Column({ name: "reply_origin_id", type: "varchar", unique: true, nullable: true })
-    private replyOriginId: string | null;;
+    public replyOriginId: string | null;;
     @ManyToOne(() => Post, post => post.replies, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'post_id' })
     public post!: Post;

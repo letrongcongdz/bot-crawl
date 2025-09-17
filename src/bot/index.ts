@@ -1,29 +1,11 @@
 import dotenv from "dotenv";
-import fetch from "node-fetch";
 import { MezonClient, type ChannelMessageContent } from "mezon-sdk";
+import cron from "node-cron";
+import { AppDataSource } from "../data-source.js";
+import { CompanyThread } from "../entities/CompanyThread.js";
+import { runCrawlerAndSave } from "../services/CrawlerService.ts";
 
 dotenv.config();
-
-export interface Reply {
-  id: number;
-  reviewer: string;
-  content: string;
-  replyOriginId: string;
-}
-
-export interface Post {
-  id: number;
-  reviewer: string;
-  content: string;
-  originId: string;
-  replies: Reply[];
-}
-
-export interface CompanyData {
-  id: number;
-  name: string;
-  posts: Post[];
-}
 
 export async function startBot(): Promise<void> {
   const token = process.env.APPLICATION_TOKEN;
@@ -34,44 +16,62 @@ export async function startBot(): Promise<void> {
   const client = new MezonClient(token);
   await client.login();
 
-  const botId = client.clientId;
+  console.log("Bot started with cron job!");
 
-  client.onChannelMessage(async (event) => {
+  async function postMessages() {
     try {
-      if (event.sender_id === botId) return;
-      if (event.content?.t !== "!post") return;
+      const companyRepo = AppDataSource.getRepository(CompanyThread);
+      const companies = await companyRepo.find({
+        relations: ["posts", "posts.replies"],
+      });
 
-      const channel = await client.channels.fetch(event.channel_id);
-      const channelName = channel.name;
-      if (!channelName) return;
+      const clan = await client.clans.fetch("1966443581044428800");
+      const allChannels = Array.from(clan.channels.values());
 
-      const companiesRes = await fetch(`${process.env.API_BASE_URL}/api/companies/`);
-      const companies = await companiesRes.json() as Pick<CompanyData, "id" | "name">[];
+      for (const company of companies) {
+        // const channel = allChannels.find((ch) => ch.name === company.name);
+        const channel = await client.channels.fetch("1967931150504562688");
+        if (!channel) {
+          console.log(`Channel for ${company.name} not found`);
+          continue;
+        }
 
-      const company = companies.find((c) => c.name === channelName);
-      if (!company) return;
+        if (company.posts.length === 0) {
+          console.log(`No posts for ${company.name}`);
+          continue;
+        }
 
-      console.log(`Posting for company: ${company.name}`);
+        const post = company.posts[0];
 
-      const postsRes = await fetch(`${process.env.API_BASE_URL}/api/companies/${company.id}`);
-      const companyData = await postsRes.json() as CompanyData;
-
-      for (const post of companyData.posts) {
-        const cardMsg = await channel.send({
-          t: `**${post.reviewer}**: ${post.content}`,
+        await channel.send({
+          t: `**${post?.reviewer}**: ${post?.content}`,
           isCard: true,
         } as ChannelMessageContent);
-      }
 
-      console.log(`All posts for ${company.name} sent successfully!`);
+        console.log(`One post for ${company.name} sent successfully!`);
+      }
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.error("Error handling message:", error.message);
+        console.error("Error in cron job:", error.message);
       } else {
         console.error("Unknown error:", error);
       }
     }
+  }
+
+  await runCrawlerAndSave();
+
+  await postMessages();
+
+  const schedule_send_message = process.env.CRON_SCHEDULE_SEND_MSG || "*/30 * * * *";
+  cron.schedule(schedule_send_message, async () => {
+    console.log("Running cron job: posting messages...");
+    await postMessages();
   });
 
-  console.log("Bot started!");
+  const schedule_crawl = process.env.CRON_SCHEDULE_CRAWL || "0 8,14,23 * * *";
+  cron.schedule(schedule_crawl, async () => {
+    console.log("Running cron job: crawl...");
+    await runCrawlerAndSave();
+  });
 }
