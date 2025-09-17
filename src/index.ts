@@ -5,14 +5,13 @@ import router from './routes/index.ts';
 import { ErrorHandler } from './middlewares/ErrorHandler.ts';
 import { runCrawlerAndSave } from './services/CrawlerService.ts';
 import { startCronJob } from './CronJob.ts';
+import { startBot } from './bot/index.ts';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-
 app.use('/api', router);
-
 app.use(ErrorHandler);
 
 AppDataSource.initialize()
@@ -21,6 +20,8 @@ AppDataSource.initialize()
 
     startCronJob();
     // await runCrawlerAndSave();
+
+    startBot();
 
     app.listen(PORT, () => {
       console.log(`Server is running on http://localhost:${PORT}`);
