@@ -4,6 +4,7 @@ import { AppDataSource } from './data-source.js';
 import router from './routes/index.ts';
 import { ErrorHandler } from './middlewares/ErrorHandler.ts';
 import { runCrawlerAndSave } from './services/CrawlerService.ts';
+import { startCronJob } from './CronJob.ts';
 import { startBot } from './bot/index.ts';
 
 const app = express();
@@ -17,7 +18,8 @@ AppDataSource.initialize()
   .then(async () => {
     console.log('Data Source has been initialized.');
 
-    await runCrawlerAndSave();
+    startCronJob();
+    // await runCrawlerAndSave();
 
     startBot();
 

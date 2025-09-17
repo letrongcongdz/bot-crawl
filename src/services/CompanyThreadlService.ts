@@ -21,6 +21,11 @@ export class CompanyThreadService {
             const existingPostIds = new Set(existingCompany.getPosts().map(p => p.getOriginId()));
             const newPosts = newCompany.getPosts().filter(p => !existingPostIds.has(p.getOriginId()));
 
+            if (newPosts.length === 0) {
+                console.log(`Company "${dto.name}" already exists. No new posts to add.`);
+                return;
+            }
+
             for (const post of newPosts) {
                 const existingReplyIds = new Set(
                     existingCompany.getPosts()
@@ -29,7 +34,7 @@ export class CompanyThreadService {
                 );
 
                 const filteredReplies = (post.getReplies() || []).filter(r => !existingReplyIds.has(r.getReplyOriginId()));
-                post.setReplies(filteredReplies);
+                post.setReplies(filteredReplies.filter(r => r.content?.trim()));
 
                 existingCompany.getPosts().push(post);
             }
@@ -46,12 +51,12 @@ export class CompanyThreadService {
     async findAllCompanies() {
         return await this.repo.find({
             select: ["id", "name"]
-       });
-    } 
+        });
+    }
 
     async findDetailCompany(id: number) {
         const company = await this.repo.findOne({
-            where: { id } as any, 
+            where: { id } as any,
             relations: ['posts', 'posts.replies']
         });
 

@@ -14,7 +14,7 @@ export class Reply {
     @Column({ name: "reviewer", type: "varchar" })
     private reviewer: string;
     @Column({ name: "content", type: "text" })
-    private content: string;
+    public content: string;
     @Column({ name: "reply_origin_id", type: "varchar", unique: true, nullable: true })
     private replyOriginId: string | null;;
     @ManyToOne(() => Post, post => post.replies, { onDelete: 'CASCADE' })
