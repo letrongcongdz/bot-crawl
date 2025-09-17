@@ -43,3 +43,5 @@ venv/
 
 # Mezon cache
 /mezon-cache
+yarn.lock
+package-lock.json
