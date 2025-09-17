@@ -11,7 +11,7 @@ export class CompanyThread {
     public id!: number;
     @Column({ name: "name", type: "varchar", unique: true })
     public name: string;
-    @OneToMany(() => Post, post => post.companyThread, { cascade: true})
+    @OneToMany(() => Post, post => post.companyThread, { cascade: true })
     public posts!: Post[];
 
     constructor(name: string, posts?: Post[]) {

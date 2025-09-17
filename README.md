@@ -33,21 +33,15 @@ npm install
 
 Create a `.env` file in the root directory:
 
-```env
+````env
 # Bot token
 APPLICATION_TOKEN=your_mezon_bot_token_here
-
-# API base URL
-API_BASE_URL=http://localhost:3000
-```
-
-Make sure your API server is running at the URL specified in `API_BASE_URL`.
 
 ### Install nodemon globally (optional)
 
 ```bash
 npm install -g nodemon
-```
+````
 
 ## Running the Source App (TypeScript)
 
@@ -73,10 +67,9 @@ npm install -D tsx
 
 ## Environment Variables
 
-| Variable            | Description                                          |
-| ------------------- | ---------------------------------------------------- |
-| `APPLICATION_TOKEN` | Token for Mezon bot                                  |
-| `API_BASE_URL`      | Base URL of your API (e.g., `http://localhost:3000`) |
+| Variable            | Description         |
+| ------------------- | ------------------- |
+| `APPLICATION_TOKEN` | Token for Mezon bot |
 
 ## Notes
 

@@ -1,0 +1,25 @@
+FROM ghcr.io/puppeteer/puppeteer:latest  as base
+
+WORKDIR /usr/app
+COPY ./src ./src
+COPY ./package.json ./
+RUN yarn install
+
+
+ARG DB_HOST
+ARG DB_PORT
+ARG DB_USER
+ARG DB_PASSWORD
+ARG DB_NAME
+ARG APPLICATION_TOKEN
+
+
+ENV DB_HOST=$DB_HOST
+ENV DB_PORT=$DB_PORT 
+ENV DB_USER=$DB_USER
+ENV DB_PASSWORD=$DB_PASSWORD
+ENV DB_NAME=$DB_NAME
+ENV APPLICATION_TOKEN=$APPLICATION_TOKEN
+
+
+CMD [ "yarn", "dev" ]

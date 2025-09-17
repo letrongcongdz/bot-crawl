@@ -12,13 +12,13 @@ import { Reply } from "./Reply.js";
 @Entity({ name: "posts" })
 export class Post {
     @PrimaryGeneratedColumn({ name: "id" })
-    private id!: number;
+    public id!: number;
     @Column({ name: "reviewer", type: "varchar" })
-    private reviewer: string;
+    public reviewer: string;
     @Column({ name: "content", type: "text" })
-    private content: string;
+    public content: string;
     @Column({ name: "origin_id", type: "varchar", unique: true, nullable: true })
-    private originId: string | null;;
+    public originId: string | null;;
     @ManyToOne(() => CompanyThread, company => company.posts, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'company_thread_id' })
     public companyThread: CompanyThread;
