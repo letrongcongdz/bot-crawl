@@ -2,8 +2,8 @@
 
 This repository contains:
 
-- **Bot** located at `src/bot/index.js` (JavaScript)
-- **Source app** located at `src/index.ts` (TypeScript)
+- **Bot** located at `src/bot/index.ts`
+- **Source app** located at `src/index.ts`
 
 Both use environment variables for configuration and can be run locally using `nodemon` or `tsx`.
 
@@ -42,22 +42,6 @@ API_BASE_URL=http://localhost:3000
 ```
 
 Make sure your API server is running at the URL specified in `API_BASE_URL`.
-
-## Running the Bot (JavaScript)
-
-The bot listens to messages and posts company reviews.
-
-### Run once
-
-```bash
-node src/bot/index.js
-```
-
-### Run with automatic restart (development)
-
-```bash
-npx nodemon src/bot/index.js
-```
 
 ### Install nodemon globally (optional)
 
