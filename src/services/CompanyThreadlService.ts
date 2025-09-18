@@ -55,15 +55,27 @@ export class CompanyThreadService {
     }
 
     async findDetailCompany(id: number) {
-        const company = await this.repo.findOne({
-            where: { id } as any,
-            relations: ['posts', 'posts.replies']
-        });
+    const company = await this.repo.createQueryBuilder("company")
+        .leftJoinAndSelect("company.posts", "post", "post.isSent = :isSent", { isSent: false })
+        .leftJoinAndSelect("post.replies", "reply")
+        .where("company.id = :id", { id })
+        .getOne();
 
-        if (!company) {
-            throw new DataNotFoundException('Company not found',);
-        }
+    if (!company) {
+        throw new DataNotFoundException('Company not found');
+    }
 
+    if (!company.posts || company.posts.length === 0) {
         return company;
     }
+
+    for (const post of company.posts) {
+        post.isSent = true;
+    }
+
+    await this.repo.save(company.posts);
+
+    return company;
+}
+
 }
