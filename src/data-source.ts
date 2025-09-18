@@ -1,8 +1,5 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { CompanyThread } from './entities/CompanyThread.js';
-import { Post } from './entities/Post.js';
-import { Reply } from './entities/Reply.js';
 import 'dotenv/config';
 
 export const AppDataSource = new DataSource({
@@ -13,6 +10,7 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD || '11062003cong',
   database: process.env.DB_NAME || 'bot-crawl',
   synchronize: true,
-  logging: false,
-  entities: [CompanyThread, Post, Reply],
+  logging: true,
+  entities: ["src/entities/**/*.ts"],
+  migrations: ["src/migrations/*.ts"],
 });

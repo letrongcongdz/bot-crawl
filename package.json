@@ -5,7 +5,7 @@
   "type": "module",
   "license": "MIT",
   "dependencies": {
-    "@types/node": "^24.3.3",
+    "@types/node": "^24.5.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "dotenv": "^17.2.2",
@@ -14,6 +14,7 @@
     "node-cron": "^4.2.1",
     "node-fetch": "^3.3.2",
     "pg": "^8.16.3",
+    "pg-hstore": "^2.3.4",
     "puppeteer": "^24.20.0",
     "reflect-metadata": "^0.2.2",
     "typeorm": "^0.3.26"
@@ -27,9 +28,12 @@
     "typescript": "^5.9.2"
   },
   "scripts": {
-  "dev": "tsx src/index.ts",
-  "start": "node dist/index.js",
-  "build": "tsc"
-}
-
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "typeorm": "tsx ./node_modules/typeorm/cli.js",
+    "migration:generate": "yarn typeorm migration:generate ./src/migrations/InitSchema -d ./src/data-source.ts",
+    "migration:run": "yarn typeorm migration:run -d ./src/data-source.ts",
+    "migration:revert": "yarn typeorm migration:revert -d ./src/data-source.ts"
+  }
 }
