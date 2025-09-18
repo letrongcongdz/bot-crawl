@@ -26,7 +26,7 @@ cd bot-crawl
 ### Install dependencies
 
 ```bash
-npm install
+yarn install
 ```
 
 ### Create environment file
@@ -40,7 +40,7 @@ APPLICATION_TOKEN=your_mezon_bot_token_here
 ### Install nodemon globally (optional)
 
 ```bash
-npm install -g nodemon
+yarn global add nodemon
 ````
 
 ## Running the Source App (TypeScript)
@@ -50,19 +50,19 @@ The source app uses TypeScript and tsx for execution.
 ### Run once
 
 ```bash
-npx tsx src/index.ts
+yarn tsx src/index.ts
 ```
 
 ### Run with automatic restart (development)
 
 ```bash
-npx nodemon --watch 'src/**/*.ts' --exec 'npx tsx' src/index.ts
+yarn nodemon --watch 'src/**/*.ts' --exec 'yarn tsx' src/index.ts
 ```
 
 ### Install tsx
 
 ```bash
-npm install -D tsx
+yarn add -D tsx
 ```
 
 ## Environment Variables
@@ -85,3 +85,9 @@ npm install -D tsx
 - VSCode + Prettier
 - Git
 - Postman (for testing API)
+
+
+## Migration
+- yarn migration:generate 
+- yarn migration:run
+- yarn migration:revert
