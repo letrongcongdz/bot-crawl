@@ -3,7 +3,9 @@ import { MezonClient, type ChannelMessageContent } from "mezon-sdk";
 import cron from "node-cron";
 import { AppDataSource } from "../data-source.js";
 import { CompanyThread } from "../entities/CompanyThread.js";
+import { Post } from "../entities/Post.js";
 import { runCrawlerAndSave } from "../services/CrawlerService.ts";
+import type { TextChannel } from "mezon-sdk/dist/cjs/mezon-client/structures/TextChannel.js";
 
 dotenv.config();
 
@@ -17,38 +19,51 @@ export async function startBot(): Promise<void> {
   await client.login();
 
   console.log("Bot started with cron job!");
+  const allChannels: TextChannel[] = [];
+
+  client.onChannelMessage(async (event) => {
+    // console.log("Channel message received:", event);
+
+    if (event.mentions?.some((m) => m.user_id === client.clientId)) {
+      const channel = await client.channels.fetch(event.channel_id);
+      if (channel && !allChannels.some((c) => c.id === channel.id)) {
+        allChannels.push(channel as TextChannel);
+        console.log(`Saved channel: ${channel.name} (${channel.id})`);
+      }
+    }
+  });
 
   async function postMessages() {
     try {
       const companyRepo = AppDataSource.getRepository(CompanyThread);
+      const postRepo = AppDataSource.getRepository(Post);
+
       const companies = await companyRepo.find({
         relations: ["posts", "posts.replies"],
       });
 
-      const clan = await client.clans.fetch("1966443581044428800");
-      const allChannels = Array.from(clan.channels.values());
-
       for (const company of companies) {
-        // const channel = allChannels.find((ch) => ch.name === company.name);
-        const channel = await client.channels.fetch("1967931150504562688");
+        const channel = allChannels.find((ch) => ch.name === company.name);
         if (!channel) {
           console.log(`Channel for ${company.name} not found`);
           continue;
         }
 
-        if (company.posts.length === 0) {
-          console.log(`No posts for ${company.name}`);
+        const post = company.posts.find((p) => !p.isSent);
+        if (!post) {
+          console.log(`No new posts for ${company.name}`);
           continue;
         }
 
-        const post = company.posts[0];
-
         await channel.send({
-          t: `**${post?.reviewer}**: ${post?.content}`,
+          t: `**${post.reviewer}**: ${post.content}`,
           isCard: true,
         } as ChannelMessageContent);
 
-        console.log(`One post for ${company.name} sent successfully!`);
+        post.isSent = true;
+        await postRepo.save(post);
+
+        console.log(`Post for ${company.name} sent successfully!`);
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
