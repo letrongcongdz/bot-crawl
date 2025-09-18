@@ -132,7 +132,7 @@ async function crawlCompany(page: puppeteer.Page, companyUrl: string): Promise<C
 }
 
 export async function runCrawlerAndSave() {
-    const browser = await puppeteer.launch({ headless: false, slowMo: 50 });
+    const browser = await puppeteer.launch({ args: ['--no-sandbox'], headless: true, slowMo: 50 });
     const page = await browser.newPage();
 
     page.setDefaultNavigationTimeout(60000);
