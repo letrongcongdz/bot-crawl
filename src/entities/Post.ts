@@ -19,6 +19,8 @@ export class Post {
     public content: string;
     @Column({ name: "origin_id", type: "varchar", unique: true, nullable: true })
     public originId: string | null;;
+    @Column({ name: "is_sent", type: "boolean", default: false })
+    public isSent!: boolean;
     @ManyToOne(() => CompanyThread, company => company.posts, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'company_thread_id' })
     public companyThread: CompanyThread;
@@ -59,6 +61,13 @@ export class Post {
     }
     setOriginId(originId: string) {
         this.originId = originId;
+    }
+
+    getIsSent(): boolean {
+        return this.isSent;
+    }
+    setIsSent(isSent: boolean) {
+        this.isSent = isSent;
     }
 
     getCompanyThread(): CompanyThread {
