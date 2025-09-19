@@ -18,11 +18,16 @@ export class CompanyThreadService {
         });
 
         if (existingCompany) {
-            const existingPostIds = new Set(existingCompany.getPosts().map(p => p.getOriginId()));
-            const newPosts = newCompany.getPosts().filter(p => !existingPostIds.has(p.getOriginId()));
+            const existingPostIds = new Set(
+                existingCompany.getPosts().map(p => p.getOriginId())
+            );
+
+            const newPosts = newCompany.getPosts().filter(
+                p => !existingPostIds.has(p.getOriginId())
+            );
 
             if (newPosts.length === 0) {
-                console.log(`Company "${dto.name}" already exists. No new posts to add.`);
+                console.log(`Company "${dto.name}" already exists. No new posts to add. Skipping...`);
                 return;
             }
 
@@ -33,9 +38,11 @@ export class CompanyThreadService {
                         .map(r => r.getReplyOriginId())
                 );
 
-                const filteredReplies = (post.getReplies() || []).filter(r => !existingReplyIds.has(r.getReplyOriginId()));
-                post.setReplies(filteredReplies.filter(r => r.content?.trim()));
+                const filteredReplies = (post.getReplies() || []).filter(
+                    r => !existingReplyIds.has(r.getReplyOriginId())
+                );
 
+                post.setReplies(filteredReplies.filter(r => r.content?.trim()));
                 existingCompany.getPosts().push(post);
             }
 
@@ -46,7 +53,6 @@ export class CompanyThreadService {
             console.log(`Company "${dto.name}" saved as new!`);
         }
     }
-
 
     async findAllCompanies() {
         return await this.repo.find({
