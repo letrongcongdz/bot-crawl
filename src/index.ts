@@ -1,6 +1,8 @@
 import 'reflect-metadata';
 import { AppDataSource } from './data-source.js';
 import { startBot } from './bot/index.js';
+import { run } from 'node:test';
+import { runCrawlerAndSave } from './services/CrawlerService.ts';
 
 AppDataSource.initialize()
   .then(async () => {

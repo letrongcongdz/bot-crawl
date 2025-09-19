@@ -87,7 +87,21 @@ yarn add -D tsx
 - Postman (for testing API)
 
 
-## Migration
-- yarn migration:generate 
-- yarn migration:run
-- yarn migration:revert
+## Database Migration (TypeORM)
+
+This project uses **TypeORM** to manage database schema changes.
+
+### Generate a new migration
+
+```bash
+yarn migration:generate
+
+### Run migration
+```bash
+yarn migration:run
+
+
+### If you revert 
+```bash
+yarn migration:revert
+
