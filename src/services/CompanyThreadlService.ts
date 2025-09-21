@@ -1,10 +1,9 @@
 import { AppDataSource } from "../data-source.ts";
 import { CompanyThread } from "../entities/CompanyThread.ts";
-import { Post } from "../entities/Post.ts";
-import { Reply } from "../entities/Reply.ts";
 import { DataNotFoundException } from "../exceptions/DataNotFoundException.ts";
 import { mapCompanyDTOToEntity } from "../mapper/CompanyThreadMapper.ts";
 import { CompanyThreadDTO } from "../dtos/CompanyThreadDTO.ts";
+import { Cluster } from "puppeteer-cluster";
 
 export class CompanyThreadService {
     private repo = AppDataSource.getRepository(CompanyThread);
