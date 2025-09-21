@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { MezonClient, type ChannelMessageContent } from "mezon-sdk";
+import { MezonClient, type ChannelMessageAck, type ChannelMessageContent } from "mezon-sdk";
 import cron from "node-cron";
 import { AppDataSource } from "../data-source.js";
 import { CompanyThread } from "../entities/CompanyThread.js";
@@ -55,10 +55,16 @@ export async function startBot(): Promise<void> {
           continue;
         }
 
-        await channel.send({
-          t: `**${post.reviewer}**: ${post.content}`,
-          isCard: true,
-        } as ChannelMessageContent);
+        await channel.send(
+          {
+            t: `${post.content}`,
+            isCard: true,
+          } as ChannelMessageContent,
+          undefined, // mentions
+          undefined, // attachments
+          false,     // mention_everyone
+          true       // anonymous_message
+        ) as ChannelMessageAck;
 
         post.isSent = true;
         await postRepo.save(post);
