@@ -24,9 +24,6 @@ export async function startBot(): Promise<void> {
   client.onChannelMessage(async (event) => {
     // console.log("Channel message received:", event);
 
-    // const channelsArray = [client.channels.values()];
-    // const channelIds = channelsArray.map(channel => channel.id);
-
     if (event.mentions?.some((m) => m.user_id === client.clientId)) {
       const channel = await client.channels.fetch(event.channel_id);
       if (channel && !allChannels.some((c) => c.id === channel.id)) {
@@ -35,8 +32,6 @@ export async function startBot(): Promise<void> {
       }
     }
   });
-
-
 
   async function postMessages() {
     try {
@@ -89,5 +84,11 @@ export async function startBot(): Promise<void> {
   cron.schedule(schedule_send_message, async () => {
     console.log("Running cron job: posting messages...");
     await postMessages();
+  });
+
+  const schedule_crawl = process.env.CRON_SCHEDULE_CRAWL || "0 8,14,23 * * *";
+  cron.schedule(schedule_crawl, async () => {
+    console.log("Running cron job: crawl...");
+    await runCrawlerAndSave();
   });
 }
