@@ -1,12 +1,12 @@
 import 'reflect-metadata';
 import { AppDataSource } from './data-source.js';
-import { startCronJob } from './CronJob.ts';
+import { runCrawlerAndSave } from './services/CrawlerService.ts';
 
 AppDataSource.initialize()
   .then(async () => {
     console.log('Data Source has been initialized.');
 
-    await startCronJob();
+    await runCrawlerAndSave();
   })
   .catch((err) => {
     console.error('Error during Data Source initialization:', err);
