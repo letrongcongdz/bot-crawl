@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import { runCrawlerAndSave } from './services/CrawlerService.ts';
 
-export function startCronJob() {
+export function startCrawlCronJob() {
     const schedule = process.env.CRON_SCHEDULE_CRAWL || "0 8,14,23 * * *";
     cron.schedule(
         schedule,

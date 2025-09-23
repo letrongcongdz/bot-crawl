@@ -4,8 +4,8 @@ import cron from "node-cron";
 import { AppDataSource } from "../data-source.js";
 import { CompanyThread } from "../entities/CompanyThread.js";
 import { Post } from "../entities/Post.js";
-import { runCrawlerAndSave } from "../services/CrawlerService.ts";
 import type { TextChannel } from "mezon-sdk/dist/cjs/mezon-client/structures/TextChannel.js";
+import { startCrawlCronJob } from "../CronJob.ts";
 
 dotenv.config();
 
@@ -86,9 +86,5 @@ export async function startBot(): Promise<void> {
     await postMessages();
   });
 
-  const schedule_crawl = process.env.CRON_SCHEDULE_CRAWL || "0 8,14,23 * * *";
-  cron.schedule(schedule_crawl, async () => {
-    console.log("Running cron job: crawl...");
-    await runCrawlerAndSave();
-  });
+  await startCrawlCronJob();
 }
