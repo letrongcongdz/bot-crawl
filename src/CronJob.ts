@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import { runCrawlerAndSave } from './services/CrawlerService.ts';
 
 export function startCronJob() {
-    const schedule = process.env.CRON_SCHEDULE || "0 8,14,23 * * *";
+    const schedule = process.env.CRON_SCHEDULE_CRAWL || "0 8,14,23 * * *";
     cron.schedule(
         schedule,
         async () => {
@@ -13,7 +13,7 @@ export function startCronJob() {
             try {
                 await runCrawlerAndSave();
                 console.log("Crawler run completed.");
-            } catch (error) { 
+            } catch (error) {
                 console.error("Error running the crawler:", error);
             }
         },
