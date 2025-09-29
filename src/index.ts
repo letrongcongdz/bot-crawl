@@ -8,8 +8,8 @@ AppDataSource.initialize()
   .then(async () => {
     console.log('Data Source has been initialized.');
 
-    //await startBot();
-    await runCrawlerAndSave();
+    await startBot();
+    //await runCrawlerAndSave();
   })
   .catch((err) => {
     console.error('Error during Data Source initialization:', err);
