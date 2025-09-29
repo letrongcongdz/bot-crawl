@@ -34,7 +34,7 @@ async function clickLoadMore(page: puppeteer.Page) {
   while (moreBtn) {
     try {
       await Promise.all([
-        page.waitForResponse(() => true, { timeout: 5000 }).catch(() => { }),
+        page.waitForResponse(() => true, { timeout: 5000 }).catch(() => {}),
         moreBtn.click(),
       ]);
       await delay(1000);
@@ -45,6 +45,9 @@ async function clickLoadMore(page: puppeteer.Page) {
   }
 }
 
+/**
+ * Crawl all posts + comments + replies of a company
+ */
 async function crawlCompany(browser: puppeteer.Browser, companyUrl: string): Promise<CompanyThreadDTO | null> {
   const posts: PostDTO[] = [];
   let currentPage = 1;
@@ -59,6 +62,7 @@ async function crawlCompany(browser: puppeteer.Browser, companyUrl: string): Pro
 
       await autoScroll(page);
       await clickLoadMore(page);
+
 
       if (currentPage === 1) {
         try {
@@ -76,10 +80,7 @@ async function crawlCompany(browser: puppeteer.Browser, companyUrl: string): Pro
 
         const moreBtn = await item.$(".readmore-link");
         if (moreBtn) {
-          try {
-            await moreBtn.click();
-            await delay(400);
-          } catch { }
+          try { await moreBtn.click(); await delay(400); } catch {}
         }
 
         const reviewer = await item.$eval(".item-title a", el => el.textContent?.trim()).catch(() => "Anonymous");
@@ -94,7 +95,6 @@ async function crawlCompany(browser: puppeteer.Browser, companyUrl: string): Pro
           const replyContent = await replyItem.$eval(".cmt-content p", el => el.textContent?.trim()).catch(() => "");
           const replyId = await replyItem.evaluate(el => el.id);
           const replyOriginId = replyId?.replace("comment-replies-", "") || "";
-
           replies.push({ reviewer: replyAuthor, content: replyContent, replyOriginId });
         }
 
@@ -115,7 +115,7 @@ async function crawlCompany(browser: puppeteer.Browser, companyUrl: string): Pro
   }
 }
 
-export async function runCrawlerAndSave(concurrency: number = 20) {
+export async function runCrawlerAndSave(concurrency: number = 5) {
   const browser = await puppeteer.launch({
     args: ["--no-sandbox"],
     headless: true,
@@ -126,11 +126,12 @@ export async function runCrawlerAndSave(concurrency: number = 20) {
   page.setDefaultNavigationTimeout(60000);
   page.setDefaultTimeout(60000);
 
-  let currentPage = 1;
+  let currentPage = 101;
+  const maxPage = 200;
   let hasNextPage = true;
 
-  while (hasNextPage) {
-    const url = baseUrl + (currentPage > 1 ? `?page=${currentPage}` : "");
+  while (hasNextPage && currentPage <= maxPage) {
+    const url = baseUrl + `?page=${currentPage}`;
     await page.goto(url, { waitUntil: "networkidle2" });
 
     await page.waitForSelector("h3.product-title a", { timeout: 20000 });
@@ -154,13 +155,13 @@ export async function runCrawlerAndSave(concurrency: number = 20) {
         const companyDTO = await crawlCompany(browser, link);
         if (companyDTO) {
           await service.save(companyDTO);
+          console.log(`Saved ${companyDTO.posts.length} posts for company: ${companyDTO.name}`);
         }
       } catch (err) {
         console.error(`Error crawling ${link}`, err);
       } finally {
         running--;
         await delay(500);
-        console.log(`Finished: ${link} | Still running: ${running} | Queue left: ${queue.length}`);
         if (queue.length > 0) {
           runNext();
         }
@@ -180,7 +181,7 @@ export async function runCrawlerAndSave(concurrency: number = 20) {
     console.log(`Done crawling all companies on page ${currentPage}`);
 
     const nextLink = await page.$('ul.pagination li a[rel="next"]');
-    hasNextPage = !!nextLink;
+    hasNextPage = !!nextLink && currentPage < maxPage;
     currentPage++;
   }
 
