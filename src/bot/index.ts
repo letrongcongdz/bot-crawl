@@ -42,35 +42,48 @@ export async function startBot(): Promise<void> {
         relations: ["posts", "posts.replies"],
       });
 
-      for (const company of companies) {
-        const channel = allChannels.find((ch) => ch.name === company.name);
-        if (!channel) {
-          console.log(`Channel for ${company.name} not found`);
-          continue;
-        }
+      // Filter companies that have a corresponding channel
+      const companiesWithChannel = companies.filter((company) =>
+        allChannels.some((ch) => ch.name === company.name)
+      );
 
-        const post = company.posts.find((p) => !p.isSent);
-        if (!post) {
-          console.log(`No new posts for ${company.name}`);
-          continue;
-        }
-
-        await channel.send(
-          {
-            t: `${post.content}`,
-            isCard: true,
-          } as ChannelMessageContent,
-          undefined, // mentions
-          undefined, // attachments
-          false,     // mention_everyone
-          true       // anonymous_message
-        ) as ChannelMessageAck;
-
-        post.isSent = true;
-        await postRepo.save(post);
-
-        console.log(`Post for ${company.name} sent successfully!`);
+      if (companiesWithChannel.length === 0) {
+        console.log("No companies with channels found.");
+        return;
       }
+
+      // Random 1 company
+      const randomCompany = companiesWithChannel[Math.floor(Math.random() * companiesWithChannel.length)];
+      const channel = allChannels.find((ch) => ch.name === randomCompany?.name)!;
+
+      console.log(`Random company selected: ${randomCompany?.name}`);
+
+      // Filter unsent posts
+      const unsentPosts: Post[] = randomCompany?.posts.filter((p) => !p.isSent) ?? [];
+      if (unsentPosts?.length === 0) {
+        console.log(`No unsent posts for ${randomCompany?.name}`);
+        return;
+      }
+
+      // Random 1 post
+      const randomPost = unsentPosts[Math.floor(Math.random() * unsentPosts.length)] as Post;
+      console.log(`Sending random post for ${randomCompany?.name}: ${randomPost.id}`);
+
+      await channel.send(
+        {
+          t: randomPost.content,
+          isCard: true,
+        } as ChannelMessageContent,
+        undefined, // mentions
+        undefined, // attachments
+        false,     // mention_everyone
+        true       // anonymous_message
+      ) as ChannelMessageAck;
+
+      randomPost.isSent = true;
+      await postRepo.save(randomPost);
+
+      console.log(`Post for ${randomCompany?.name} sent successfully!`);
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Error in cron job:", error.message);
