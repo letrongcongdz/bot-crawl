@@ -10,7 +10,7 @@
     "class-validator": "^0.14.2",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
-    "mezon-sdk": "^2.8.13",
+    "mezon-sdk": "^2.8.20",
     "node-cron": "^4.2.1",
     "node-fetch": "^3.3.2",
     "pg": "^8.16.3",
