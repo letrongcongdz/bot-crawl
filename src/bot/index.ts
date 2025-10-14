@@ -12,11 +12,13 @@ dotenv.config();
 
 export async function startBot(): Promise<void> {
   const token = process.env.APPLICATION_TOKEN;
+  const BOT_ID = process.env.BOT_ID;
+  if (!BOT_ID) throw new Error("BOT_ID is not set in .env");
   if (!token) {
     throw new Error("APPLICATION_TOKEN is not set in .env");
   }
 
-  const client = new MezonClient(token);
+  const client = new MezonClient({ botId: BOT_ID, token: token });
   await client.login();
 
   console.log("Bot started with cron job!");
