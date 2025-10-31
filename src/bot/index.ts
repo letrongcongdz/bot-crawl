@@ -59,57 +59,95 @@ export async function startBot(): Promise<void> {
   const { hour: START_HOUR, minute: START_MIN } = parseTime(process.env.CRON_SEND_MSG_START, 8, 0);
   const { hour: END_HOUR, minute: END_MIN } = parseTime(process.env.CRON_SEND_MSG_END, 18, 0);
 
-
+  // Prevent overlapping prepare jobs
+  let isPreparing = false;
+  // English comment: we need retryInterval accessible outside to clear it immediately on success
+  let retryInterval: NodeJS.Timeout | null = null;
+  // English comment: also need to track postingInterval so we can start it once after prepare success
+  let postingInterval: NodeJS.Timeout | null = null;
   async function prepareDailyPlan() {
-    console.log("Preparing daily plan...");
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-
-    if (lastPreparedDate === today && planCompletedToday) {
-      console.log("Daily plan was already completed earlier today. Skipping prepare.");
+    if (isPreparing) {
+      console.log("⚙️ prepareDailyPlan() is already running, skipping...");
       return;
     }
 
-    const companyRepo = AppDataSource.getRepository(CompanyThread);
+    isPreparing = true;
+    try {
+      console.log("Preparing daily plan...");
+      const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 
-    const companies = await companyRepo.find({
-      relations: ["posts", "posts.replies"],
-    });
+      if (lastPreparedDate === today && planCompletedToday) {
+        console.log("Daily plan was already completed earlier today. Skipping prepare.");
+        return;
+      }
 
-    // Filter companies that have a corresponding channel
-    const companiesWithChannel = companies.filter((company) =>
-      allChannels.some((ch) => ch.name === company.name)
-    );
+      const companyRepo = AppDataSource.getRepository(CompanyThread);
+      const companies = await companyRepo.find({
+        relations: ["posts", "posts.replies"],
+      });
 
-    if (companiesWithChannel.length === 0) {
-      console.log("No companies with channels found.");
-      return;
+      // Filter companies that have a corresponding channel
+      const companiesWithChannel = companies.filter((company) =>
+        allChannels.some((ch) => ch.name === company.name)
+      );
+
+      if (companiesWithChannel.length === 0) {
+        // ⚠️ No companies yet — maybe bot not tagged or DB not ready
+        console.log("⚠️ No companies with channels found. Will retry in 5 minutes...");
+        isPreparing = false;
+        return;
+      }
+
+      // Shuffle companies
+      const shuffled = companiesWithChannel.sort(() => Math.random() - 0.5);
+
+      // Pick 2/3 companies
+      const numToPick = Math.ceil((2 / 3) * shuffled.length);
+      dailyCompanyPlan = shuffled.slice(0, numToPick);
+      console.log('Companies selected for today:', dailyCompanyPlan.map(c => c.name));
+
+      currentCompanyIndex = 0;
+      currentRound = 0;
+      lastPreparedDate = today;
+      planCompletedToday = false;
+
+      totalMessages = dailyCompanyPlan.length * 3;
+      const totalSeconds =
+        (new Date().setHours(END_HOUR, END_MIN, 0, 0) - new Date().setHours(START_HOUR, START_MIN, 0, 0)) / 1000;
+      const rawInterval = totalSeconds / totalMessages;
+      intervalMinutes = Math.floor(rawInterval / 60);
+
+      console.log(
+        `✅ Prepared daily plan for ${today}: ${dailyCompanyPlan.length}/${companiesWithChannel.length} companies selected. Total messages: ${totalMessages}, interval: ${formatInterval(intervalMinutes)}`
+      );
+
+      // ✅ FIX (issue 3): clear retry interval immediately after prepare success
+      if (retryInterval) {
+        console.log("🧹 Clearing retry interval because prepare succeeded.");
+        clearInterval(retryInterval);
+        retryInterval = null;
+      }
+      // ✅ FIX (issue 1): if posting not started and interval ready, start it now
+      if (!postingInterval && intervalMinutes > 0) {
+        console.log(`🚀 Starting message posting every ${formatInterval(intervalMinutes)} after prepare success...`);
+        postingInterval = setInterval(async () => {
+          await postMessages();
+        }, intervalMinutes * 60 * 1000);
+      }
+
+    } catch (err) {
+      console.error("❌ Error during prepareDailyPlan:", err);
+    } finally {
+      isPreparing = false;
     }
-
-    // Shuffle companies
-    const shuffled = companiesWithChannel.sort(() => Math.random() - 0.5);
-
-    // Pick 2/3 companies
-    const numToPick = Math.ceil((2 / 3) * shuffled.length);
-    dailyCompanyPlan = shuffled.slice(0, numToPick);
-    console.log('Companies selected for today:', dailyCompanyPlan.map(c => c.name));
-
-    currentCompanyIndex = 0;
-    currentRound = 0;
-    lastPreparedDate = today;
-    planCompletedToday = false;
-
-    totalMessages = dailyCompanyPlan.length * 3;
-    const totalSeconds =
-      (new Date().setHours(END_HOUR, END_MIN, 0, 0) - new Date().setHours(START_HOUR, START_MIN, 0, 0)) / 1000;
-    const rawInterval = totalSeconds / totalMessages;
-    intervalMinutes = Math.floor(rawInterval / 60);
-
-    console.log(
-      `Prepared daily plan for ${today}: ${dailyCompanyPlan.length}/${companiesWithChannel.length} companies selected.  Total messages: ${totalMessages}, interval: ${formatInterval(intervalMinutes)}`
-    );
   }
 
   async function postMessages() {
+    if (planCompletedToday) {
+      console.log("Plan completed today, skipping further messages.");
+      return;
+    }
+
     try {
       const now = new Date();
       const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), START_HOUR, START_MIN);
@@ -119,11 +157,6 @@ export async function startBot(): Promise<void> {
         console.log("Current time is outside of sending window. Skipping.");
         return;
       }
-
-      // // Prepare plan if nothing prepared yet for today
-      // if (dailyCompanyPlan.length === 0) {
-      //   await prepareDailyPlan();
-      // }
 
       if (dailyCompanyPlan.length === 0) {
         console.log("No companies available in plan.");
@@ -209,8 +242,22 @@ export async function startBot(): Promise<void> {
     }
   }
 
-  // const schedule_send_message = process.env.CRON_SCHEDULE_SEND_MSG || "* * * * *";
-  // After prepareDailyPlan()
+  // 🕐 Immediately try prepare once on startup
+  console.log("🚀 Running initial prepareDailyPlan() on startup...");
+  await prepareDailyPlan();
+
+  // 🕑 If no plan yet (means no company found), retry every 5 minutes until success
+  retryInterval = setInterval(async () => {
+    if (dailyCompanyPlan.length === 0) {
+      console.log("⏳ Retrying prepareDailyPlan() after 5 minutes...");
+      await prepareDailyPlan();
+    } else {
+      console.log("✅ Daily plan is ready. Stopping retry interval.");
+      clearInterval(retryInterval!);
+      retryInterval = null;
+    }
+  }, 5 * 60 * 1000);
+
   let prepareMinute = START_MIN - 10;
   let prepareHour = START_HOUR;
 
@@ -226,26 +273,11 @@ export async function startBot(): Promise<void> {
   const cronTime = `${prepareMinute} ${prepareHour} * * *`;
 
   cron.schedule(cronTime, async () => {
-    console.log(`⏰ Preparing daily plan 10 minutes before start time (${prepareHour}:${prepareMinute.toString().padStart(2, "0")})`);
+    console.log(`⏰ Preparing daily plan 10 minutes before start time (${prepareHour}:${prepareMinute
+      .toString()
+      .padStart(2, "0")})`);
     await prepareDailyPlan();
   });
 
-
-
-  if (intervalMinutes <= 0) {
-    console.warn("⚠️ Interval not ready yet. Retrying plan in 1 minutes...");
-    setTimeout(async () => {
-      await prepareDailyPlan();
-      if (intervalMinutes > 0) {
-        console.log(`🚀 Starting message posting every ${formatInterval(intervalMinutes)}...`);
-        setInterval(async () => {
-          await postMessages();
-        }, intervalMinutes * 60 * 1000);
-      }
-    }, 1 * 60 * 1000);
-    return;
-  }
-
   await startCrawlCronJob();
-
 }
