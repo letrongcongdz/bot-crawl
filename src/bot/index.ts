@@ -242,7 +242,7 @@ export async function startBot(): Promise<void> {
 
 
   if (intervalMinutes <= 0) {
-    console.warn("⚠️ Interval not ready yet. Retrying plan in 1 minutes...");
+    console.warn("⚠️ Interval not ready yet. Retrying plan in 3 minutes...");
     setTimeout(async () => {
       await prepareDailyPlan();
       if (intervalMinutes > 0) {
@@ -251,7 +251,7 @@ export async function startBot(): Promise<void> {
           await postMessages();
         }, intervalMinutes * 60 * 1000);
       }
-    }, 1 * 60 * 1000);
+    }, 3 * 60 * 1000);
     return;
   }
 
