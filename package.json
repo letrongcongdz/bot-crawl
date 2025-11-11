@@ -10,7 +10,7 @@
     "class-validator": "^0.14.2",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
-    "mezon-sdk": "^2.8.20",
+    "mezon-sdk": "^2.8.24",
     "node-cron": "^4.2.1",
     "node-fetch": "^3.3.2",
     "pg": "^8.16.3",
@@ -18,10 +18,11 @@
     "puppeteer": "^24.20.0",
     "puppeteer-cluster": "^0.24.0",
     "reflect-metadata": "^0.2.2",
-    "typeorm": "^0.3.26"
+    "typeorm": "^0.3.27"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
+    "@types/node-cron": "^3.0.11",
     "@types/pg": "^8.15.5",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",

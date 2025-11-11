@@ -99,8 +99,17 @@ export async function startBot(): Promise<void> {
     planCompletedToday = false;
 
     totalMessages = dailyCompanyPlan.length * 3;
-    const totalSeconds =
-      (new Date().setHours(END_HOUR, END_MIN, 0, 0) - new Date().setHours(START_HOUR, START_MIN, 0, 0)) / 1000;
+
+    const now = new Date();
+    const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), START_HOUR, START_MIN);
+    const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), END_HOUR, END_MIN);
+
+    const effectiveStart = now > startTime && now < endTime ? now : startTime;
+
+    const totalSeconds = (endTime.getTime() - effectiveStart.getTime()) / 1000;
+
+    // const totalSeconds =
+    //   (new Date().setHours(END_HOUR, END_MIN, 0, 0) - new Date().setHours(START_HOUR, START_MIN, 0, 0)) / 1000;
     const rawInterval = totalSeconds / totalMessages;
     intervalMinutes = Math.floor(rawInterval / 60);
 
